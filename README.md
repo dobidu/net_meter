@@ -1,4 +1,3 @@
-```markdown
 # net_meter
 
 The **net_meter** is a C++ project that measures network latency and jitter using different protocols. Currently, it supports HTTP requests through the `net_meter_http` subclass and ICMP ping through the `net_meter_ping` subclass.
