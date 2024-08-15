@@ -95,12 +95,3 @@ Contributions are welcome! Please follow these steps:
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-```
-
-### Notes
-
-- Replace `<your-repo-url>` with the actual URL of your GitHub repository.
-- Customize any sections as needed, especially the examples, to match the exact usage of your classes.
-- Make sure the file structure, dependencies, and other information are accurate based on your project setup.
-
-If you need any modifications or additional sections, feel free to ask!
