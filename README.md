@@ -1,96 +1,188 @@
 # net_meter
 
-The **net_meter** is a C++ project that measures network latency and jitter using different protocols. Currently, it supports HTTP requests through the `net_meter_http` subclass and ICMP ping through the `net_meter_ping` subclass.
+`net_meter` is a C++ library for measuring network latency and jitter over different protocols. It currently supports HTTP, ICMP (ping), TCP, and UDP.
 
 ## Features
 
-- Measure latency and jitter for HTTP requests.
-- Measure latency for ICMP ping requests.
-- Configurable number of requests and timeout values.
-- Simple and extensible design for future protocols.
+- **HTTP Latency Measurement:** Measures the time taken to receive a response from a specified HTTP endpoint.
+- **ICMP (Ping) Latency Measurement:** Measures the round-trip time to a specified host using the ICMP protocol.
+- **TCP Latency Measurement:** Measures the time taken to establish a TCP connection to a specified host and receive a response.
+- **UDP Latency Measurement:** Measures the round-trip time for sending a UDP packet to a specified host and receiving a response.
 
-## Table of Contents
+## Dependencies
 
-- [Installation](#installation)
-- [Usage](#usage)
-  - [Net Meter HTTP](#net-meter-http)
-  - [Net Meter Ping](#net-meter-ping)
-- [Contributing](#contributing)
-- [License](#license)
+- **C++17** or later
+- **cpr** - A C++ HTTP client library.
 
 ## Installation
 
-### Prerequisites
+1. **Clone the repository:**
 
-Make sure you have the following dependencies installed:
+   ```sh
+   git clone https://github.com/yourusername/net_meter.git
+   cd net_meter
+   ```
 
-- C++17 or later
-- CMake
-- [cpr](https://github.com/libcpr/cpr) for HTTP requests (submodule included)
-- Permissions for raw socket usage (for ICMP ping)
+2. **Build the project:**
 
-### Clone the Repository
+   The `CMakeLists.txt` is configured to automatically fetch the `cpr` library. Just run the following commands to build the project:
 
-```bash
-git clone --recurse-submodules https://github.com/dobidu/net_meter
-cd net_meter
+   ```sh
+   mkdir build
+   cd build
+   cmake ..
+   make
+   ```
+
+## Suggested Echo Servers
+
+### TCP Echo Server
+
+To use `net_meter_tcp`, you need to run a TCP echo server. Here’s a simple implementation:
+
+```cpp
+#include <iostream>
+#include <string>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <unistd.h>
+
+int main(int argc, char* argv[]) {
+    if (argc != 2) {
+        std::cerr << "Usage: " << argv[0] << " <port>" << std::endl;
+        return 1;
+    }
+
+    int port = std::stoi(argv[1]);
+    int server_fd = socket(AF_INET, SOCK_STREAM, 0);
+
+    sockaddr_in server_addr = {};
+    server_addr.sin_family = AF_INET;
+    server_addr.sin_addr.s_addr = INADDR_ANY;
+    server_addr.sin_port = htons(port);
+
+    bind(server_fd, (sockaddr*)&server_addr, sizeof(server_addr));
+    listen(server_fd, 5);
+
+    while (true) {
+        int client_fd = accept(server_fd, nullptr, nullptr);
+        char buffer[1024] = {0};
+        ssize_t bytes_received = recv(client_fd, buffer, sizeof(buffer), 0);
+        send(client_fd, buffer, bytes_received, 0);
+        close(client_fd);
+    }
+
+    close(server_fd);
+    return 0;
+}
 ```
 
-### Build the Project
+### UDP Echo Server
 
-```bash
-mkdir build
-cd build
-cmake ..
-make
+For `net_meter_udp`, here’s a simple UDP echo server implementation:
+
+```cpp
+#include <iostream>
+#include <string>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <unistd.h>
+
+int main(int argc, char* argv[]) {
+    if (argc != 2) {
+        std::cerr << "Usage: " << argv[0] << " <port>" << std::endl;
+        return 1;
+    }
+
+    int port = std::stoi(argv[1]);
+    int server_fd = socket(AF_INET, SOCK_DGRAM, 0);
+
+    sockaddr_in server_addr = {};
+    server_addr.sin_family = AF_INET;
+    server_addr.sin_addr.s_addr = INADDR_ANY;
+    server_addr.sin_port = htons(port);
+
+    bind(server_fd, (sockaddr*)&server_addr, sizeof(server_addr));
+
+    while (true) {
+        char buffer[1024] = {0};
+        sockaddr_in client_addr;
+        socklen_t client_addr_len = sizeof(client_addr);
+        ssize_t bytes_received = recvfrom(server_fd, buffer, sizeof(buffer), 0, (sockaddr*)&client_addr, &client_addr_len);
+        sendto(server_fd, buffer, bytes_received, 0, (sockaddr*)&client_addr, client_addr_len);
+    }
+
+    close(server_fd);
+    return 0;
+}
 ```
 
 ## Usage
 
-### Net Meter HTTP
+### Examples
 
-To use the `net_meter_http` subclass to measure HTTP latency and jitter:
+#### HTTP Latency Measurement
 
 ```cpp
 #include "net_meter_http.h"
 
 int main() {
-    net_meter_http http_meter("http://example.com/api", 10, 5000);
-    http_meter.perform_measurement();
-
-    std::cout << "Average Latency: " << http_meter.get_average_latency() << " ms" << std::endl;
-    std::cout << "Average Jitter: " << http_meter.get_average_jitter() << " ms" << std::endl;
+    net_meter_http http_tester("https://example.com/api/endpoint", 10, 5000);
+    http_tester.test();
+    std::cout << "Average HTTP Latency: " << http_tester.get_average_latency() << " ms" << std::endl;
 
     return 0;
 }
 ```
 
-### Net Meter Ping
-
-To use the `net_meter_ping` subclass to measure ICMP ping latency:
+#### ICMP (Ping) Latency Measurement
 
 ```cpp
 #include "net_meter_ping.h"
 
 int main() {
-    net_meter_ping ping_meter("8.8.8.8", 10, 1000);
-    ping_meter.perform_measurement();
+    net_meter_ping ping_tester("8.8.8.8", 10, 5000);
+    ping_tester.test();
+    std::cout << "Average Ping Latency: " << ping_tester.get_average_latency() << " ms" << std::endl;
 
-    std::cout << "Average Latency: " << ping_meter.get_average_latency() << " ms" << std::endl;
-    
     return 0;
 }
 ```
 
-## Contributing
+#### TCP Latency Measurement
 
-Contributions are welcome! Please follow these steps:
+```cpp
+#include "net_meter_tcp.h"
 
-1. Fork the repository.
-2. Create a new branch for your feature or bug fix.
-3. Make your changes and commit them.
-4. Push your changes to your forked repository.
-5. Open a pull request describing your changes.
+int main() {
+    net_meter_tcp tcp_tester("your.server.address", 10, 5000, 12345, "Hello, TCP!");
+    tcp_tester.test();
+    std::cout << "Average TCP Latency: " << tcp_tester.get_average_latency() << " ms" << std::endl;
+
+    return 0;
+}
+```
+
+#### UDP Latency Measurement
+
+```cpp
+#include "net_meter_udp.h"
+
+int main() {
+    net_meter_udp udp_tester("your.server.address", 10, 5000, 12345, "Hello, UDP!");
+    udp_tester.test();
+    std::cout << "Average UDP Latency: " << udp_tester.get_average_latency() << " ms" << std::endl;
+
+    return 0;
+}
+```
+
+### Running the Tests
+
+To measure latency and jitter using the provided subclasses:
+
+1. **Start the TCP or UDP echo server** on the target machine using the provided implementations.
+2. **Run the net_meter tool** using one of the provided examples or your own implementation.
 
 ## License
 
