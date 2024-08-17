@@ -38,7 +38,7 @@
 
 ### TCP Echo Server
 
-To use `net_meter_tcp`, you need to run a TCP echo server. Here’s a simple implementation:
+To utilize `net_meter_tcp` effectively, it's essential to have a TCP echo server running on the host that will act as the counterpart for latency and jitter measurements. Here's a simple implementation you can use:
 
 ```cpp
 #include <iostream>
@@ -79,7 +79,7 @@ int main(int argc, char* argv[]) {
 
 ### UDP Echo Server
 
-For `net_meter_udp`, here’s a simple UDP echo server implementation:
+For `net_meter_udp` the same logic applies, here’s a simple UDP echo server implementation:
 
 ```cpp
 #include <iostream>
@@ -181,7 +181,7 @@ int main() {
 
 To measure latency and jitter using the provided subclasses:
 
-1. **Start the TCP or UDP echo server** on the target machine using the provided implementations.
+1. **Start the TCP or UDP echo server** on the target machine using the provided implementations if using `net_meter_tcp` or `net_meter_udp`.
 2. **Run the net_meter tool** using one of the provided examples or your own implementation.
 
 ## License
