@@ -6,6 +6,7 @@
 #include <netinet/ip_icmp.h>
 #include <arpa/inet.h>
 #include <unistd.h>
+#include <netdb.h>
 
 // Utility function to calculate checksum for ICMP packet
 uint16_t checksum(void* data, int len) {
@@ -23,14 +24,13 @@ uint16_t checksum(void* data, int len) {
     return ~sum;
 }
 
-net_meter_ping::net_meter_ping(const std::string& target_address, int num_requests_value, int timeout_value)
-    : net_meter(num_requests_value, timeout_value), target_address(target_address) {}
-
-std::string net_meter_ping::get_target_address() const {
-    return target_address;
-}
+net_meter_ping::net_meter_ping(const std::string& target_address_value, int num_requests_value, int timeout_value)
+    : net_meter(target_address_value,num_requests_value, timeout_value) {}
 
 void net_meter_ping::perform_measurement() {
+    if (geteuid() != 0) {
+        throw std::runtime_error("ICMP ping requires root privileges");
+    }
     int sockfd = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP);
     if (sockfd < 0) {
         throw std::runtime_error("Socket creation failed");
@@ -38,7 +38,18 @@ void net_meter_ping::perform_measurement() {
 
     sockaddr_in addr{};
     addr.sin_family = AF_INET;
-    addr.sin_addr.s_addr = inet_addr(target_address.c_str());
+    //Test whether the target address stores an IP address or a domain name
+    //If it is a domain name, it is resolved to an IP address
+    if (inet_addr(target_address.c_str()) == INADDR_NONE) {
+        hostent* host = gethostbyname(target_address.c_str());
+        if (host == nullptr) {
+            close(sockfd);
+            throw std::runtime_error("Failed to resolve hostname");
+        }
+        addr.sin_addr.s_addr = *reinterpret_cast<unsigned long*>(host->h_addr_list[0]);
+    } else {
+        addr.sin_addr.s_addr = inet_addr(target_address.c_str());
+    }
 
     char packet[64];
     struct icmp* icmp_header = reinterpret_cast<struct icmp*>(packet);

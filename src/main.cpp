@@ -4,6 +4,8 @@
 #include "net_meter.h"
 #include "net_meter_http.h"
 #include "net_meter_ping.h"
+#include "net_meter_tcp.h"
+#include "net_meter_udp.h"
 
 void run_latency_test(net_meter& tester, int thread_id) {
     try {
@@ -16,8 +18,36 @@ void run_latency_test(net_meter& tester, int thread_id) {
 }
 
 int main() {
+    net_meter_udp udp_tester("localhost", 10, 5000, 12345, "Hello, world!");
+
+    const int num_threads = 1;
+
+    std::vector<std::thread> threads;
+
+    threads.push_back(std::thread(run_latency_test, std::ref(udp_tester), 0));
+
+    for (auto& thread : threads) {
+        thread.join();
+    }
+
+    std::cout << std::endl;
+    std::cout << "All threads completed latency tests." << std::endl;
+    std::cout << std::endl;
+    std::cout << "Target address for UDP test: " << udp_tester.get_target_address() << std::endl;
+    std::cout << "Latencies for UDP test: ";
+    for (const auto& latency : udp_tester.get_latencies()) {
+        std::cout << latency << " ";
+    }
+    std::cout << std::endl;
+    std::cout << "Average latency for UDP test: " << udp_tester.get_average_latency() << " ms" << std::endl;
+    std::cout << "Median latency for UDP test: " << udp_tester.get_median_latency() << " ms" << std::endl;
+    std::cout << "Average jitter for UDP test: " << udp_tester.get_average_jitter() << " ms" << std::endl;
+    std::cout << std::endl;
+
+/*    
     net_meter_http http_tester("https://jsonplaceholder.typicode.com/posts/1", 10, 5000);
-    net_meter_ping ping_tester("8.8.8.8", 10, 5000);
+    net_meter_ping ping_tester("google.com", 10, 5000);
+    //net_meter_tcp tcp_tester
 
     const int num_threads = 2;
     std::vector<std::thread> threads;
@@ -42,7 +72,7 @@ int main() {
     std::cout << "Median latency for ping test: " << ping_tester.get_median_latency() << " ms" << std::endl;
     std::cout << "Average jitter for ping test: " << ping_tester.get_average_jitter() << " ms" << std::endl;
     std::cout << std::endl;
-    std::cout << "Endpoint URL for HTTP test: " << http_tester.get_endpoint_url() << std::endl;
+    std::cout << "Endpoint URL for HTTP test: " << http_tester.get_target_address() << std::endl;
     std::cout << "Latencies for HTTP test: ";
     for (const auto& latency : http_tester.get_latencies()) {
         std::cout << latency << " ";
@@ -51,6 +81,6 @@ int main() {
     std::cout << "Average latency for HTTP test: " << http_tester.get_average_latency() << " ms" << std::endl;
     std::cout << "Median latency for HTTP test: " << http_tester.get_median_latency() << " ms" << std::endl;
     std::cout << "Average jitter for HTTP test: " << http_tester.get_average_jitter() << " ms" << std::endl;
-
+*/
     return 0;
 }

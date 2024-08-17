@@ -20,6 +20,8 @@ set(SOURCES
     src/net_meter.cpp
     src/net_meter_http.cpp
     src/net_meter_ping.cpp
+    src/net_meter_udp.cpp
+    src/net_meter_tcp.cpp
     src/main.cpp
 )
 

@@ -3,8 +3,8 @@
 #include <cmath>
 #include <algorithm>
 
-net_meter::net_meter(int num_requests_value, int timeout_value)
-    : num_requests(num_requests_value), timeout(timeout_value), jitter(0) {}
+net_meter::net_meter(const std::string& target_address_value, int num_requests_value, int timeout_value)
+    : target_address(target_address_value), num_requests(num_requests_value), timeout(timeout_value), jitter(0) {}
 
 void net_meter::test() {
     latencies.clear();
@@ -58,6 +58,14 @@ int net_meter::get_timeout() const {
 
 void net_meter::set_timeout(int timeout_value) {
     timeout = timeout_value;
+}
+
+const std::string& net_meter::get_target_address() const {
+    return target_address;
+}
+
+void net_meter::set_target_address(const std::string& target_address_value) {
+    target_address = target_address_value;
 }
 
 void net_meter::calculate_jitter() {
