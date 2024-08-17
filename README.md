@@ -19,7 +19,7 @@
 1. **Clone the repository:**
 
    ```sh
-   git clone https://github.com/yourusername/net_meter.git
+   git clone https://github.com/dobidu/net_meter.git
    cd net_meter
    ```
 
